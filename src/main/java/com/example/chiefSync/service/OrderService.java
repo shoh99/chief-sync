@@ -6,6 +6,7 @@ import com.example.chiefSync.repostiroy.MenuItemRepository;
 import com.example.chiefSync.repostiroy.OrderItemRepository;
 import com.example.chiefSync.repostiroy.OrderRepository;
 import lombok.AllArgsConstructor;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +21,7 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final MenuItemRepository menuItemRepository;
     private final OrderItemRepository orderItemRepository;
+    private final SimpMessagingTemplate messagingTemplate;
 
     public OrderResponseDto createOrder(CreateOrderRequestsDTO orderRequestsDTO) {
         Order newOrder = new Order();
@@ -67,8 +69,11 @@ public class OrderService {
     public OrderResponseDto updateOrderStatus(Long orderId, OrderStatus newStatus) {
         Order foundOrder = orderRepository.findById(orderId).orElseThrow(() ->new RuntimeException("Order not found with id: " + orderId));
         foundOrder.setStatus(newStatus);
+        OrderResponseDto response = mapOrderToResponseDto(orderRepository.save(foundOrder));
 
-        return mapOrderToResponseDto(orderRepository.save(foundOrder));
+        System.out.println("Sending message to websocket");
+        messagingTemplate.convertAndSend("/topic/orders", response);
+        return response;
     }
 
 

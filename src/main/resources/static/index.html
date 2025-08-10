@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ChefSync Live Orders</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+</head>
+<body>
+<h1>ChefSync Live Order Updates</h1>
+<div id="updates"></div>
+
+<script type="text/javascript">
+    function connect() {
+        // 1. Create a new WebSocket connection
+        var socket = new SockJS('/ws');
+        var stompClient = Stomp.over(socket);
+
+        // 2. Connect to the server
+        stompClient.connect({}, function (frame) {
+            console.log('Connected: ' + frame);
+            document.getElementById('updates').innerHTML = 'Connected to WebSocket! Waiting for order updates...';
+
+            // 3. Subscribe to the public topic
+            stompClient.subscribe('/topic/orders', function (message) {
+                // 4. When a message is received, parse it and display it
+                var orderUpdate = JSON.parse(message.body);
+                console.log('Received update:', orderUpdate);
+
+                var newUpdate = document.createElement('p');
+                newUpdate.textContent = 'Order #' + orderUpdate.orderId +
+                    ' status changed to: ' + orderUpdate.status +
+                    ' at ' + new Date().toLocaleTimeString();
+                document.getElementById('updates').appendChild(newUpdate);
+            });
+        });
+    }
+    connect();
+</script>
+</body>
+</html>
